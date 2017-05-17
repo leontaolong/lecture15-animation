@@ -91,7 +91,6 @@ public class MainActivity extends AppCompatActivity {
 
             float scaleFactor = .03f;
 
-            //fling!
             Log.v(TAG, "Fling! "+ velocityX + ", " + velocityY);
             view.ball.dx = -1*velocityX*scaleFactor;
             view.ball.dy = -1*velocityY*scaleFactor;
