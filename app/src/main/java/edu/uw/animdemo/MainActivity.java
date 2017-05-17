@@ -25,6 +25,8 @@ public class MainActivity extends AppCompatActivity {
 
     private GestureDetectorCompat mDetector;
 
+    private int mSecondPointId;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,14 +68,27 @@ public class MainActivity extends AppCompatActivity {
 //                view.ball.dx = (x - view.ball.cx)/Math.abs(x - view.ball.cx)*30;
 //                view.ball.dy = (y - view.ball.cy)/Math.abs(y - view.ball.cy)*30;
                 return true;
-            case (MotionEvent.ACTION_MOVE) : //move finger
+//            case (MotionEvent.ACTION_MOVE) : //move finger
                 //Log.v(TAG, "finger move");
 //                view.ball.cx = x;
 //                view.ball.cy = y;
-                return true;
+//                return true;
             case (MotionEvent.ACTION_UP) : //lift finger up
             case (MotionEvent.ACTION_CANCEL) : //aborted gesture
             case (MotionEvent.ACTION_OUTSIDE) : //outside bounds
+            case MotionEvent.ACTION_POINTER_DOWN:
+                //if there's a second finger, then the pseudo code is like:
+                mSecondPointId = event.getPointerId(1);
+
+            case MotionEvent.ACTION_MOVE:
+                view.ball.cx = event.getX();
+                view.ball.cy = event.getY();
+                event.findPointerIndex(mSecondPointId);
+
+
+
+                return true;
+
             default :
                 return super.onTouchEvent(event);
         }
