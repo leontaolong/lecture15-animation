@@ -32,7 +32,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        view = (DrawingSurfaceView)findViewById(R.id.drawingView);
+        view = (DrawingSurfaceView) findViewById(R.id.drawingView);
 
         radiusAnim = (AnimatorSet) AnimatorInflater.loadAnimator(this, R.animator.animations);
 
@@ -41,56 +41,78 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
-        //Log.v(TAG, event.toString());
-
-        boolean gesture = mDetector.onTouchEvent(event); //ask the detector to handle instead
-        //if(gesture) return true; //if we don't also want to handle
-
-        float x = event.getX();
-        float y = event.getY() - getSupportActionBar().getHeight(); //closer to center...
-
+        Log.v(TAG, event.toString());
+        mDetector.onTouchEvent(event);
+        int pointerIndex = MotionEventCompat.getActionIndex(event);
+        int pointerID = MotionEventCompat.getPointerId(event, pointerIndex);
         int action = MotionEventCompat.getActionMasked(event);
-        switch(action) {
-            case (MotionEvent.ACTION_DOWN) : //put finger down
-                //Log.v(TAG, "finger down");
-
-                ObjectAnimator xAnim = ObjectAnimator.ofFloat(view.ball, "x", x);
-                xAnim.setDuration(1000);
-                ObjectAnimator yAnim = ObjectAnimator.ofFloat(view.ball, "y", y);
-                yAnim.setDuration(1500); //y moves 1.5x slower
-
-                AnimatorSet set = new AnimatorSet();
-                set.playTogether(yAnim, xAnim);
-                set.start();
-
-//                view.ball.cx = x;
-//                view.ball.cy = y;
-//                view.ball.dx = (x - view.ball.cx)/Math.abs(x - view.ball.cx)*30;
-//                view.ball.dy = (y - view.ball.cy)/Math.abs(y - view.ball.cy)*30;
-                return true;
-//            case (MotionEvent.ACTION_MOVE) : //move finger
-                //Log.v(TAG, "finger move");
-//                view.ball.cx = x;
-//                view.ball.cy = y;
-//                return true;
-            case (MotionEvent.ACTION_UP) : //lift finger up
-            case (MotionEvent.ACTION_CANCEL) : //aborted gesture
-            case (MotionEvent.ACTION_OUTSIDE) : //outside bounds
-            case MotionEvent.ACTION_POINTER_DOWN:
-                //if there's a second finger, then the pseudo code is like:
-                mSecondPointId = event.getPointerId(1);
-
-            case MotionEvent.ACTION_MOVE:
-                view.ball.cx = event.getX();
-                view.ball.cy = event.getY();
-                event.findPointerIndex(mSecondPointId);
-
-
+        float x = event.getX(); //get location of event
+        float y = event.getY() - getSupportActionBar().getHeight(); //closer to center...
+        switch (action) {
+            case (MotionEvent.ACTION_DOWN): //put finger down
+                //e.g., move ball
+                //                view.ball.cx = x;
+                //                view.ball.cy = y;
+                ObjectAnimator animx = ObjectAnimator.ofFloat(view.ball, "x", x);
+                ObjectAnimator animy = ObjectAnimator.ofFloat(view.ball, "y", y);
+                animx.setDuration(1000);
+                animy.setDuration(1500);
+                AnimatorSet animatorSet = new AnimatorSet();
+                animatorSet.playTogether(animx, animy);
+                animatorSet.start();
+                view.addTouch(pointerID, event.getX(pointerIndex), event.getY(pointerIndex) - getSupportActionBar().getHeight());
 
                 return true;
-
-            default :
+            case (MotionEvent.ACTION_POINTER_DOWN):
+                view.addTouch(pointerID, event.getX(pointerIndex), event.getY(pointerIndex) - getSupportActionBar().getHeight());
+                return true;
+            case (MotionEvent.ACTION_POINTER_UP):
+                view.removeTouch(pointerID);
+                return true;
+            case (MotionEvent.ACTION_MOVE): //move finger
+                //e.g., move ball
+                view.ball.cx = x;
+                view.ball.cy = y;
+                return true;
+            case (MotionEvent.ACTION_UP): //lift finger up
+                view.removeTouch(pointerID);
+                return true;
+            case (MotionEvent.ACTION_CANCEL): //aborted gesture
+            case (MotionEvent.ACTION_OUTSIDE): //outside bounds
+            default:
                 return super.onTouchEvent(event);
+        }
+    }
+
+    /**
+     * Menus
+     **/
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        MenuInflater inflater = getMenuInflater();
+        inflater.inflate(R.menu.menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        switch (item.getItemId()) {
+            case R.id.menu_pulse:
+                //make the ball change size!
+                if (!radiusAnim.isRunning()) {
+                    radiusAnim.setTarget(view.ball);
+                    radiusAnim.start();
+                } else {
+                    radiusAnim.end();
+                }
+                return true;
+            case R.id.menu_button:
+                startActivity(new Intent(MainActivity.this, ButtonActivity.class));
+                return true;
+            default:
+                return super.onOptionsItemSelected(item);
         }
     }
 
@@ -106,42 +128,32 @@ public class MainActivity extends AppCompatActivity {
 
             float scaleFactor = .03f;
 
-            Log.v(TAG, "Fling! "+ velocityX + ", " + velocityY);
-            view.ball.dx = -1*velocityX*scaleFactor;
-            view.ball.dy = -1*velocityY*scaleFactor;
+            Log.v(TAG, "Fling! " + velocityX + ", " + velocityY);
+            view.ball.dx = -1 * velocityX * scaleFactor;
+            view.ball.dy = -1 * velocityY * scaleFactor;
 
             return true; //we got this
         }
-    }
 
 
-    /** Menus **/
+        @Override
+        public void onShowPress(MotionEvent motionEvent) {
+        }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.menu, menu);
-        return true;
-    }
+        @Override
+        public boolean onSingleTapUp(MotionEvent motionEvent) {
+            return false;
+        }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
+        @Override
+        public boolean onScroll(MotionEvent motionEvent, MotionEvent motionEvent1, float v, float v1) {
+            return false;
+        }
 
-        switch(item.getItemId()){
-            case R.id.menu_pulse:
-                //make the ball change size!
-                if(!radiusAnim.isRunning()) {
-                    radiusAnim.setTarget(view.ball);
-                    radiusAnim.start();
-                } else {
-                    radiusAnim.end();
-                }
-                return true;
-            case R.id.menu_button:
-                startActivity(new Intent(MainActivity.this, ButtonActivity.class));
-                return true;
-            default:
-                return super.onOptionsItemSelected(item);
+        @Override
+        public void onLongPress(MotionEvent motionEvent) {
+
         }
     }
+}
 }

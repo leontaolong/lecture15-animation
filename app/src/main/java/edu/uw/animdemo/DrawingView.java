@@ -8,6 +8,8 @@ import android.graphics.Paint;
 import android.util.AttributeSet;
 import android.view.View;
 
+import java.util.HashMap;
+
 /**
  * A basic custom view for drawing on.
  * @author Joel Ross
@@ -26,6 +28,8 @@ public class DrawingView extends View {
 
     public Ball ball; //public for easy access
 
+    private HashMap<Integer, Ball> touches;
+
     /**
      * We need to override all the constructors, since we don't know which will be called
      * All the constructors eventually call init()
@@ -42,11 +46,22 @@ public class DrawingView extends View {
         super(context, attrs, defaultStyle);
 
         viewWidth = 1; viewHeight = 1; //positive defaults; will be replaced when #onSizeChanged() is called
+        touches = new HashMap<Integer, Ball>();
 
         //set up drawing variables ahead of time
         whitePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         whitePaint.setColor(Color.WHITE);
 
+    }
+    @Override
+    public synchronized void addTouch(int pointerID, float x, float y){
+        Ball ballNew = new Ball(x,y,50);
+        touches.put(pointerID, ballNew);
+    }
+
+    @Override
+    public synchronized void removeTouch(int pointerID){
+        touches.remove(pointerID);
     }
 
     /**
@@ -95,6 +110,13 @@ public class DrawingView extends View {
                 bmp.setPixel(x, y, Color.YELLOW); //we can also set individual pixels in a Bitmap (like a BufferedImage)
             }
         }
+
+        Object[] iter = touches.values().toArray();
+        for (int i = 0 ; i < iter.length ; i++){
+            Ball ballNew = (Ball)iter[i];
+            canvas.drawCircle(ballNew.cx, ballNew.cy, ballNew.radius, whitePaint); //we can draw directly onto the canvas
+        }
+
         canvas.drawBitmap(bmp, 0, 0, null); //and then draw the BitMap onto the canvas.
         //Canvas bmc = new Canvas(bmp); //we can also make a canvas out of a Bitmap to draw on that (like fetching g2d from a BufferedImage) if we don't want to double-buffer
     }
